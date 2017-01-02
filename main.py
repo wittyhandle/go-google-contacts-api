@@ -6,41 +6,53 @@ import sys
 
 class ContactWriter:
 
-	GOOGLE_AUTH = 'https://www.googleapis.com/oauth2/v4/token'
-	GOOGLE_CONTACT_API = 'https://www.google.com/m8/feeds/contacts/default/full/?alt=json&max-results=30000'
+	client_id = None
+	client_secret = None
+	refresh_token = None
+	google_auth = None
+	google_contact_api = None
 
 	def __init__(self):
 
 		with open('./config.yml', 'r') as f:
 			cfg = yaml.load(f)
 
-		self.get_contacts(cfg)
+		with open('./secrets.yml', 'r') as f:
+			secrets = yaml.load(f)
 
-	def get_contacts(self, cfg):
-		access_token = self.authenticate(cfg)
+		self.client_id = cfg['client_id']
+		self.client_secret = secrets['client_secret']
+		self.refresh_token = secrets['refresh_token']
+		self.google_auth = cfg['google_auth']
+		self.google_contact_api = cfg['google_contact_api']
+
+		self.get_contacts()
+
+	def get_contacts(self):
+		access_token = self.authenticate()
 		authorization = "Bearer {0}".format(access_token)
 
 		header = {'Authorization': authorization}
-		contacts = requests.get(ContactWriter.GOOGLE_CONTACT_API, headers=header)
+		contacts = requests.get(self.google_contact_api, headers=header)
 
-		print contacts.text
+		print contacts.json()
 
-	def authenticate(self, cfg):
+	def authenticate(self):
 
 		params = {
-			'client_id': cfg['client_id'], 
-			'client_secret': cfg['client_secret'], 
-			'refresh_token': cfg['refresh_token'], 
+			'client_id': self.client_id, 
+			'client_secret': self.client_secret, 
+			'refresh_token': self.refresh_token, 
 			'grant_type': 'refresh_token'
 		}
 
 		try:
-			auth = requests.post(ContactWriter.GOOGLE_AUTH, params)
+			auth = requests.post(self.google_auth, params)
 			auth.raise_for_status()
 			return auth.json()['access_token']
 		except Exception as ex:
-			template = "Could not authenticate to google. Check for a valid refresh token. Details:\n{0}"
-			print template.format(ex.args)
+			msg = "Could not authenticate to google. Check for a valid refresh token. Details:\n{0}"
+			print msg.format(ex.args)
 			sys.exit(1)
 		
 
