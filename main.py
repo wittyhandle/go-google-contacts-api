@@ -3,6 +3,7 @@
 import requests
 import yaml
 import sys
+import csv
 
 class ContactWriter:
 
@@ -14,6 +15,8 @@ class ContactWriter:
 
 	def __init__(self):
 
+		fout = open("./out.txt", 'a')
+
 		with open('./config.yml', 'r') as f:
 			cfg = yaml.load(f)
 
@@ -21,23 +24,36 @@ class ContactWriter:
 			secrets = yaml.load(f)
 
 		self.client_id = cfg['client_id']
-		self.client_secret = secrets['client_secret']
-		self.refresh_token = secrets['refresh_token']
 		self.google_auth = cfg['google_auth']
 		self.google_contact_api = cfg['google_contact_api']
+		self.client_secret = secrets['client_secret']
+		self.refresh_token = secrets['refresh_token']
+		
+		contacts = self._get_contacts()
 
-		self.get_contacts()
+		csv_entries = []
+		for entry in contacts['feed']['entry']:
+			if 'gd$email' in entry and 'title' in entry and entry['title']['$t'] != '':
+				name = entry['title']['$t']
+				email = entry['gd$email'][0]['address']
+				csv_entries.append({'name': name, 'email': email})
 
-	def get_contacts(self):
-		access_token = self.authenticate()
+		keys = csv_entries[0].keys()
+		with open('contacts.csv', 'wb') as f:
+			dict_writer = csv.DictWriter(f, keys)
+			dict_writer.writeheader()
+			dict_writer.writerows(csv_entries)
+
+	def _get_contacts(self):
+		access_token = self._authenticate()
 		authorization = "Bearer {0}".format(access_token)
 
 		header = {'Authorization': authorization}
 		contacts = requests.get(self.google_contact_api, headers=header)
 
-		print contacts.json()
+		return contacts.json()
 
-	def authenticate(self):
+	def _authenticate(self):
 
 		params = {
 			'client_id': self.client_id, 
@@ -54,6 +70,5 @@ class ContactWriter:
 			msg = "Could not authenticate to google. Check for a valid refresh token. Details:\n{0}"
 			print msg.format(ex.args)
 			sys.exit(1)
-		
 
 ContactWriter()
