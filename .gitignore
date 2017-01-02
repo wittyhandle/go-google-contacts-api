@@ -1,3 +1,2 @@
 env
-# remove this when I sort out how to handle sensitive configs
 secrets.yml
