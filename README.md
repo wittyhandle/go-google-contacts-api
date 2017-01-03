@@ -1,6 +1,6 @@
 Overview
 ===
-Integrates dad's awesome excel estimation software with the Google API Contacts provider so he can edit contacts in one place and reference them from his software.
+Integrates dad's awesome excel estimation software with the Google API Contacts provider so he can edit contacts in one place and reference them from his software. The idea with this script is as follows; We'll install on your windows machine python and related tools to run this script. We'll create a scheduled task within windows to run this script on a periodic basis, say every hour. The script will output a csv file to a configured location and excel can read from this file to source in its contacts.
 
 Setup
 ===
